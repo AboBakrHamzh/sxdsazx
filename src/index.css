@@ -1,1 +1,325 @@
 @import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════
+   نظام التوكنز — P0
+   لوحتان: أ «حبر الليل» (افتراضية) · ب «عاجي النهار»
+   التبديل: data-theme على <html> — كل الألوان عبر متغيرات
+   ═══════════════════════════════════════════════════════ */
+
+:root[data-theme="a"] {
+  --bg: #0b1512;
+  --surface: #101d18;
+  --surface2: #17271f;
+  --line: #24392e;
+  --linesoft: #1a2c24;
+  --text: #eae3d2;
+  --muted: #93a79a;
+  --faint: #5f7367;
+  --gold: #c7a45f;
+  --gold2: #e5cd92;
+  --golddeep: #8f7339;
+  --olive: #55705c;
+  --olive-deep: #2e4a3b;
+  --paper: #efe6cf;
+  --paper-ink: #22302a;
+  --glow: rgba(199, 164, 95, 0.12);
+  --shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.65);
+  color-scheme: dark;
+}
+
+:root[data-theme="b"] {
+  --bg: #f2ecdc;
+  --surface: #f9f4e6;
+  --surface2: #eee7d1;
+  --line: #d9cdae;
+  --linesoft: #e5dcc3;
+  --text: #1d2b24;
+  --muted: #5a6b5f;
+  --faint: #93a192;
+  --gold: #96763a;
+  --gold2: #7c5f2c;
+  --golddeep: #b08f4e;
+  --olive: #33523f;
+  --olive-deep: #243b2e;
+  --paper: #fffbef;
+  --paper-ink: #26332b;
+  --glow: rgba(150, 118, 58, 0.1);
+  --shadow: 0 24px 60px -24px rgba(35, 43, 36, 0.35);
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-base: var(--bg);
+  --color-card: var(--surface);
+  --color-card2: var(--surface2);
+  --color-line: var(--line);
+  --color-linesoft: var(--linesoft);
+  --color-ink: var(--text);
+  --color-mute: var(--muted);
+  --color-faint: var(--faint);
+  --color-gold: var(--gold);
+  --color-brass: var(--gold2);
+  --color-golddeep: var(--golddeep);
+  --color-olive: var(--olive);
+  --color-moss: var(--olive-deep);
+  --color-paper: var(--paper);
+  --color-papink: var(--paper-ink);
+  --font-display: "Amiri", "IBM Plex Sans Arabic", serif;
+  --font-body: "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-khat: "Aref Ruqaa", "Amiri", serif;
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-snap: cubic-bezier(0.34, 1.4, 0.4, 1);
+}
+
+/* ── أساس ─────────────────────────────────────────── */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  transition: background-color 0.5s var(--ease-soft), color 0.5s var(--ease-soft);
+}
+
+::selection {
+  background: var(--gold);
+  color: var(--bg);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+::-webkit-scrollbar {
+  width: 9px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ── مفاتيح الحركة ────────────────────────────────── */
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadein {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes sheetup {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes popin {
+  0% { transform: scale(0.4); opacity: 0; }
+  70% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes eqbar {
+  from { transform: scaleY(0.25); }
+  to { transform: scaleY(1); }
+}
+@keyframes floaty {
+  0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+  50% { transform: translateY(-9px) rotate(var(--rot, 0deg)); }
+}
+@keyframes spinSlow {
+  to { transform: rotate(360deg); }
+}
+@keyframes breathe {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+@keyframes veilstar {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+/* ── الظهور عند التمرير ───────────────────────────── */
+
+.rv {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.8s var(--ease-soft) var(--d, 0ms), transform 0.8s var(--ease-soft) var(--d, 0ms);
+  will-change: opacity, transform;
+}
+.rv.on {
+  opacity: 1;
+  transform: none;
+}
+
+/* رسم النقوش خطًّا خطًّا */
+.draw path, .draw rect, .draw circle, .draw line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.draw.on path, .draw.on rect, .draw.on circle, .draw.on line {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset var(--dd, 1.4s) var(--ease-soft) calc(var(--i, 0) * 110ms);
+}
+
+/* شريط المساواة في المشغّل */
+.eq span {
+  display: inline-block;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--gold);
+  transform-origin: bottom;
+  animation: eqbar 0.5s var(--ease-soft) infinite alternate;
+  animation-play-state: paused;
+  height: 100%;
+}
+.eq.live span {
+  animation-play-state: running;
+}
+
+/* ── نطاق التمرير (seek) ──────────────────────────── */
+
+input[type="range"].seek {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 4px;
+  background: linear-gradient(to left, var(--gold) var(--fill, 0%), var(--line) var(--fill, 0%));
+  cursor: pointer;
+}
+input[type="range"].seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--gold2);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 3px var(--glow);
+  transition: transform 0.15s var(--ease-snap);
+}
+input[type="range"].seek::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+}
+input[type="range"].seek::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--gold2);
+  border: 2px solid var(--bg);
+}
+
+/* ── مكونات متكررة ────────────────────────────────── */
+
+.btn-press {
+  transition: transform 0.12s var(--ease-snap), box-shadow 0.2s var(--ease-soft), background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+.btn-press:active {
+  transform: scale(0.93);
+}
+
+.card-lift {
+  transition: transform 0.45s var(--ease-soft), box-shadow 0.45s var(--ease-soft), border-color 0.45s var(--ease-soft), background-color 0.45s;
+}
+.card-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow);
+  border-color: color-mix(in srgb, var(--gold) 55%, var(--line));
+}
+
+.link-line {
+  position: relative;
+}
+.link-line::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: -3px;
+  height: 2px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.35s var(--ease-soft);
+}
+.link-line:hover::after, .link-line[aria-current="true"]::after {
+  transform: scaleX(1);
+}
+
+.gold-skeleton {
+  background: linear-gradient(110deg, var(--surface2) 30%, var(--line) 50%, var(--surface2) 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+/* أشرطة التمرير الأفقية بلا شريط ظاهر */
+.rail {
+  scrollbar-width: none;
+  cursor: grab;
+}
+.rail::-webkit-scrollbar {
+  display: none;
+}
+.rail:active {
+  cursor: grabbing;
+}
+
+/* ورق الوثائق (الردود) */
+.doc-paper {
+  background:
+    radial-gradient(ellipse at 20% 10%, rgba(255, 255, 255, 0.5), transparent 55%),
+    var(--paper);
+  color: var(--paper-ink);
+  box-shadow: var(--shadow), inset 0 0 0 1px rgba(143, 115, 57, 0.25);
+}
+
+/* ── كثافة الحركة ─────────────────────────────────── */
+
+:root[data-motion="off"] *, :root[data-motion="off"] *::before, :root[data-motion="off"] *::after {
+  animation-duration: 0.001s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001s !important;
+}
+:root[data-motion="off"] .rv {
+  opacity: 1;
+  transform: none;
+}
+:root[data-motion="off"] .draw path, :root[data-motion="off"] .draw rect,
+:root[data-motion="off"] .draw circle, :root[data-motion="off"] .draw line {
+  stroke-dashoffset: 0;
+}
+
+:root[data-motion="light"] .rv {
+  transition-duration: 0.35s;
+  transform: translateY(10px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001s !important;
+  }
+  .rv { opacity: 1; transform: none; }
+  .draw path, .draw rect, .draw circle, .draw line { stroke-dashoffset: 0; }
+}
