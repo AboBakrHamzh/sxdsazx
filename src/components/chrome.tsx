@@ -3,8 +3,8 @@ import {
   KIND_LABEL, SUGGESTIONS, books, fatawa, khutab, lectures, rudad,
   searchIndex, seriesList, type Kind, type SearchItem,
 } from "../data/content";
-import { cx, hijriToday, normalizeAr, toAr, useInView, useScrolled, useScrollProgress } from "../lib/utils";
-import { useFav, useUI } from "../state/store";
+import { cx, hijriToday, normalizeAr, toAr, useActiveSection, useInView, usePrefersReducedMotion, useScrolled, useScrollProgress } from "../lib/utils";
+import { useFav, usePlayer, useUI } from "../state/store";
 import { Flourish, Khatam, Mashrabiya } from "./ornament";
 
 /* ═══════════ مخطوطة الاسم (البديل النصي الفاخر) ═══════════ */
@@ -136,6 +136,8 @@ export function Header() {
   const progress = useScrollProgress();
   const { favs } = useFav();
   const { setSearchOpen, setAccOpen, theme, setTheme } = useUI();
+  const { current, playing, toggle } = usePlayer();
+  const active = useActiveSection(["series", "fatwa", "radd", "articles", "library", "p0"]);
 
   return (
     <header
@@ -156,12 +158,41 @@ export function Header() {
         </a>
 
         <nav className="hidden items-center gap-6 lg:flex" aria-label="التنقل الرئيسي">
-          {NAV.map((n) => (
-            <a key={n.href} href={n.href} className="link-line text-sm font-medium text-mute transition-colors hover:text-ink">
-              {n.label}
-            </a>
-          ))}
+          {NAV.map((n) => {
+            const isA = active === n.href.slice(1);
+            return (
+              <a
+                key={n.href}
+                href={n.href}
+                aria-current={isA || undefined}
+                className={cx("link-line text-sm font-medium transition-colors hover:text-ink", isA ? "text-ink" : "text-mute")}
+              >
+                {n.label}
+              </a>
+            );
+          })}
         </nav>
+
+        {/* فقاعة «يُتلى الآن» — تربط الرأس بالمشغّل */}
+        {current && (
+          <button
+            onClick={toggle}
+            className="btn-press hidden max-w-60 items-center gap-2.5 rounded-full border border-gold/45 bg-gold/10 py-1.5 pl-3.5 pr-2 text-xs font-medium text-gold xl:flex"
+            aria-label={playing ? "إيقاف مؤقت" : "متابعة التشغيل"}
+            title={current.title}
+          >
+            <span className="relative grid h-2.5 w-2.5 shrink-0 place-items-center">
+              {playing && <span className="ping2 absolute inset-0 rounded-full bg-gold" aria-hidden="true" />}
+              <span className="relative h-2.5 w-2.5 rounded-full bg-gold" aria-hidden="true" />
+            </span>
+            <span className={cx("eq flex h-3.5 shrink-0 items-end gap-[2px]", playing && "live")} aria-hidden="true">
+              {[0, 1, 2].map((i) => (
+                <span key={i} style={{ animationDelay: `${i * 0.13}s`, height: `${[100, 58, 80][i]}%` }} />
+              ))}
+            </span>
+            <span className="truncate">{current.title}</span>
+          </button>
+        )}
 
         <div className="flex items-center gap-2">
           <button
@@ -254,7 +285,7 @@ export function MobileBar() {
 export function Sheet({ open, onClose, title, children, wide = false }: {
   open: boolean; onClose: () => void; title: string; children: ReactNode; wide?: boolean;
 }) {
-  const { ref, on } = useInView<HTMLDivElement>("0px");
+  const { ref } = useInView<HTMLDivElement>("0px");
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center" role="dialog" aria-modal="true" aria-label={title}>
@@ -274,7 +305,7 @@ export function Sheet({ open, onClose, title, children, wide = false }: {
           </button>
         </div>
         <div className="px-5 py-5">{children}</div>
-        <span className={cx("pointer-events-none absolute inset-x-0 bottom-2 mx-auto h-1 w-12 rounded-full bg-line", on ? "" : "")} />
+        <span className="pointer-events-none absolute inset-x-0 bottom-2 mx-auto h-1 w-12 rounded-full bg-line" aria-hidden="true" />
       </div>
     </div>
   );
@@ -540,6 +571,72 @@ export function Footer() {
       </div>
     </footer>
   );
+}
+
+/* ═══════════ العودة إلى الأعلى — بحلقة تقدم القراءة ═══════════ */
+
+export function BackToTop() {
+  const p = useScrollProgress();
+  const { current } = usePlayer();
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const fn = () => setShow(window.scrollY > 700);
+    fn();
+    window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
+  return (
+    <button
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      className={cx(
+        "btn-press fixed left-4 z-40 grid h-12 w-12 place-items-center rounded-full border border-gold/50 bg-card/90 text-gold shadow-xl shadow-black/20 backdrop-blur transition-all duration-500",
+        current ? "bottom-[8.5rem] md:bottom-24" : "bottom-20 md:bottom-6",
+        show ? "opacity-100" : "pointer-events-none translate-y-5 opacity-0"
+      )}
+      aria-label="العودة إلى الأعلى"
+    >
+      <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="46" fill="none" stroke="var(--line)" strokeWidth="4" />
+        <circle
+          cx="50" cy="50" r="46" fill="none" stroke="var(--gold)" strokeWidth="4" strokeLinecap="round"
+          strokeDasharray={`${p * 289} 289`}
+          style={{ transition: "stroke-dasharray 0.25s linear" }}
+        />
+      </svg>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M12 19V5m0 0-6 6m6-6 6 6" />
+      </svg>
+    </button>
+  );
+}
+
+/* ═══════════ توهج ذهبي يتبع المؤشر ═══════════ */
+
+export function CursorGlow() {
+  const ref = useRef<HTMLDivElement>(null);
+  const { motion } = useUI();
+  const prm = usePrefersReducedMotion();
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || motion === "off" || prm || !window.matchMedia("(pointer: fine)").matches) return;
+    let raf = 0;
+    const mv = (e: PointerEvent) => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        el.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+        if (!el.classList.contains("lit")) el.classList.add("lit");
+      });
+    };
+    const leave = () => el.classList.remove("lit");
+    window.addEventListener("pointermove", mv, { passive: true });
+    document.documentElement.addEventListener("mouseleave", leave);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("pointermove", mv);
+      document.documentElement.removeEventListener("mouseleave", leave);
+    };
+  }, [motion, prm]);
+  return <div ref={ref} className="cursor-glow" aria-hidden="true" />;
 }
 
 /* عناصر مساعدة مشتركة تُستخدم في الأقسام */

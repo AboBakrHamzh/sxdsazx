@@ -9,7 +9,19 @@ import { DlBtn, FavBtn, MiniBar } from "./player";
 
 export function FatwaAccordion() {
   const [open, setOpen] = useState<string | null>(fatawa[0].id);
+  const [copied, setCopied] = useState<string | null>(null);
   const { ref, on } = useInView<HTMLDivElement>();
+
+  const copyAnswer = (id: string, text: string) => {
+    const done = () => {
+      setCopied(id);
+      window.setTimeout(() => setCopied(null), 1800);
+    };
+    try {
+      if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(done).catch(done);
+      else done();
+    } catch { done(); }
+  };
 
   return (
     <section id="fatwa" className="relative scroll-mt-24">
@@ -55,6 +67,25 @@ export function FatwaAccordion() {
                             {f.answer}
                             <span className="font-display text-2xl text-gold">﴾</span>
                           </p>
+                          <div className="mt-4 flex items-center gap-3">
+                            <button
+                              onClick={() => copyAnswer(f.id, f.answer)}
+                              className={cx(
+                                "btn-press flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors",
+                                copied === f.id ? "border-moss bg-moss/20 text-olive" : "border-line text-mute hover:border-gold/60 hover:text-gold"
+                              )}
+                              aria-label="نسخ الجواب"
+                            >
+                              {copied === f.id ? I.check() : (
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                  <rect x="9" y="9" width="12" height="12" rx="2" />
+                                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                </svg>
+                              )}
+                              {copied === f.id ? "نُسخ الجواب" : "نسخ الجواب"}
+                            </button>
+                            <span className="num text-[10.5px] text-faint">صدرت في {f.hijri}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -71,23 +102,7 @@ export function FatwaAccordion() {
             <p className="mt-2 text-sm leading-relaxed text-mute">
               يصل سؤالك إلى الشيخ كمسودة فتوى — تُراجع وتُنشر إن كانت مما يعمّ به البلوى.
             </p>
-            <textarea
-              rows={4}
-              placeholder="اكتب سؤالك هنا…"
-              className="mt-4 w-full resize-none rounded-xl border border-line bg-card2/60 px-4 py-3 text-sm text-ink outline-none transition-colors placeholder:text-faint focus:border-gold/60"
-              aria-label="نص السؤال"
-            />
-            <button
-              onClick={(e) => {
-                const b = e.currentTarget;
-                b.textContent = "وصل السؤال ✓";
-                b.disabled = true;
-                b.classList.add("opacity-80");
-              }}
-              className="btn-press mt-3 w-full rounded-full bg-gold py-3 text-sm font-bold text-base shadow-md shadow-gold/20"
-            >
-              إرسال إلى مكتب الشيخ
-            </button>
+            <AskForm />
             <p className="mt-3 text-[11px] leading-relaxed text-faint">
               يُفضَّل ذكر البلد وحالة السؤال. الأسئلة الطبية تُحال لأهل الاختصاص أولًا.
             </p>
@@ -347,5 +362,89 @@ export function DiaryGrid() {
         </div>
       </div>
     </section>
+  );
+}
+
+/* ═══════════ نموذج السؤال — بحالات حية وارتجاع فوري ═══════════ */
+
+function AskForm() {
+  const [text, setText] = useState("");
+  const [phase, setPhase] = useState<"idle" | "sending" | "sent">("idle");
+  const [shake, setShake] = useState(0);
+  const [touched, setTouched] = useState(false);
+
+  const short = text.trim().length < 12;
+
+  const send = () => {
+    if (phase !== "idle") return;
+    if (short) {
+      setTouched(true);
+      setShake((s) => s + 1);
+      return;
+    }
+    setPhase("sending");
+    window.setTimeout(() => {
+      setPhase("sent");
+      setText("");
+      setTouched(false);
+    }, 950);
+  };
+
+  if (phase === "sent") {
+    return (
+      <div className="mt-4 rounded-xl border border-moss/50 bg-moss/15 px-4 py-5 text-center" style={{ animation: "rise 0.5s var(--ease-soft) both" }}>
+        <span className="mx-auto grid h-10 w-10 place-items-center rounded-full bg-moss/25 text-olive" style={{ animation: "popin 0.5s var(--ease-snap) both" }}>
+          {I.check()}
+        </span>
+        <p className="mt-2.5 text-sm font-semibold text-ink">وصل سؤالك إلى مكتب الشيخ</p>
+        <p className="mt-1 text-[11px] leading-relaxed text-mute">يُراجَع في مجلس الفتوى، وتُنشر الخلاصة إن كان مما يعمّ به البلوى.</p>
+        <button
+          onClick={() => setPhase("idle")}
+          className="btn-press mt-3.5 rounded-full border border-line px-4 py-1.5 text-[11px] font-semibold text-mute transition-colors hover:border-gold/60 hover:text-gold"
+        >
+          إرسال سؤال آخر
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div key={shake} className={cx(shake > 0 && touched && short && "shake")}>
+        <textarea
+          rows={4}
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+            if (touched && e.target.value.trim().length >= 12) setTouched(false);
+          }}
+          placeholder="اكتب سؤالك هنا… (اثنا عشر حرفًا على الأقل)"
+          className={cx(
+            "mt-4 w-full resize-none rounded-xl border bg-card2/60 px-4 py-3 text-sm text-ink outline-none transition-colors placeholder:text-faint",
+            touched && short ? "border-gold/70" : "border-line focus:border-gold/60"
+          )}
+          aria-label="نص السؤال"
+        />
+      </div>
+      {touched && short && (
+        <p className="mt-1.5 text-[11px] font-medium text-gold" style={{ animation: "fadein 0.4s both" }}>
+          أطل السؤال قليلًا ليُفهم مرادك — اثنا عشر حرفًا على الأقل.
+        </p>
+      )}
+      <button
+        onClick={send}
+        disabled={phase === "sending"}
+        className="btn-press sheen mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-gold py-3 text-sm font-bold text-base shadow-md shadow-gold/20 disabled:opacity-80"
+      >
+        {phase === "sending" ? (
+          <>
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden="true" />
+            جارٍ الإرسال…
+          </>
+        ) : (
+          "إرسال إلى مكتب الشيخ"
+        )}
+      </button>
+    </div>
   );
 }

@@ -95,6 +95,8 @@ function PlayerProvider({ children }: { children: ReactNode }) {
   const [volume, setVolumeState] = useState(0.8);
   const [expanded, setExpanded] = useState(false);
   const ref = useRef({ progress: 0, duration: 0, speed: 1, playing: false });
+  const playRef = useRef<(t: Track, q?: Track[]) => void>(() => {});
+  const qRef = useRef<Track[]>([]);
 
   useEffect(() => {
     ref.current.playing = playing;
@@ -110,8 +112,17 @@ function PlayerProvider({ children }: { children: ReactNode }) {
         const np = p + 0.25 * ref.current.speed;
         if (np >= current.duration) {
           window.clearInterval(id);
-          setPlaying(false);
-          stopPad();
+          const idx = qRef.current.findIndex((t) => t.id === current.id);
+          const nx = qRef.current[idx + 1];
+          if (nx) {
+            /* انتقال حيّ: لحظة سكون قصيرة ثم يبدأ المقطع التالي وحده */
+            stopPad();
+            setPlaying(false);
+            window.setTimeout(() => playRef.current(nx, qRef.current), 700);
+          } else {
+            setPlaying(false);
+            stopPad();
+          }
           return current.duration;
         }
         return np;
@@ -147,6 +158,8 @@ function PlayerProvider({ children }: { children: ReactNode }) {
       }
     } catch { /* noop */ }
   }, [volume]);
+
+  useEffect(() => { playRef.current = play; qRef.current = queue; });
 
   const toggle = useCallback(() => {
     if (!current) return;

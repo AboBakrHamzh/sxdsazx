@@ -156,3 +156,45 @@ export function downloadTrack(name: string, freq = 392, secs = 2.2): void {
 }
 
 export const cx = (...c: (string | false | null | undefined)[]): string => c.filter(Boolean).join(" ");
+
+/* ── هوكس الحيوية (الدفعة الثانية) ─────────────────── */
+
+export function useScrollY(): number {
+  const [y, setY] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const fn = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => setY(window.scrollY));
+    };
+    fn();
+    window.addEventListener("scroll", fn, { passive: true });
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("scroll", fn); };
+  }, []);
+  return y;
+}
+
+/* تتبع القسم النشط أثناء التمرير (Scroll-spy) */
+export function useActiveSection(ids: string[]): string {
+  const [active, setActive] = useState("");
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      (es) => {
+        const vis = es.filter((e) => e.isIntersecting);
+        if (vis.length) {
+          vis.sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+          setActive(vis[0].target.id);
+        }
+      },
+      { rootMargin: "-36% 0px -54% 0px", threshold: [0, 0.12, 0.35] }
+    );
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) io.observe(el);
+    });
+    return () => io.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ids.join(",")]);
+  return active;
+}

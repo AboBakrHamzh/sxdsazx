@@ -1,10 +1,28 @@
 import { useMemo } from "react";
-import { KIND_LABEL, articles, diary, seriesList } from "../data/content";
-import { cx, fmtClock, fmtDur, hijriToday, toAr, useInView } from "../lib/utils";
-import { featuredSeries, seriesQueue, useFav, usePlayer, useUI } from "../state/store";
+import { KIND_LABEL, articles, diary, fatawa, khutab, seriesList } from "../data/content";
+import { cx, fmtClock, fmtDur, hijriToday, toAr, useInView, usePrefersReducedMotion, useScrollY } from "../lib/utils";
+import { featuredSeries, seriesQueue, usePlayer, useUI } from "../state/store";
 import { Sheet, I } from "./chrome";
 import { Corners, Girih, Khatam, Mashrabiya, ProgressKhatam, SectionHead } from "./ornament";
-import { DlBtn, Eq, FavBtn, MiniBar } from "./player";
+import { DlBtn, FavBtn } from "./player";
+
+/* مواضع الذرّات الذهبية السابحة في الافتتاحية */
+const DUST = [
+  { x: 6, y: 24, s: 4, t: 8.5, dl: 0, dx: 20, o: 0.55 },
+  { x: 13, y: 66, s: 3, t: 7, dl: 1.2, dx: -14, o: 0.4 },
+  { x: 21, y: 38, s: 5, t: 9.5, dl: 0.6, dx: 16, o: 0.6 },
+  { x: 29, y: 80, s: 3, t: 6.5, dl: 2.1, dx: -18, o: 0.45 },
+  { x: 37, y: 18, s: 4, t: 8, dl: 1.7, dx: 12, o: 0.5 },
+  { x: 45, y: 55, s: 3, t: 7.5, dl: 0.3, dx: -12, o: 0.4 },
+  { x: 53, y: 30, s: 5, t: 10, dl: 2.6, dx: 22, o: 0.55 },
+  { x: 61, y: 72, s: 3, t: 6.8, dl: 1.4, dx: -16, o: 0.45 },
+  { x: 68, y: 22, s: 4, t: 8.8, dl: 0.9, dx: 14, o: 0.5 },
+  { x: 76, y: 48, s: 3, t: 7.2, dl: 2.9, dx: -20, o: 0.4 },
+  { x: 83, y: 84, s: 5, t: 9.2, dl: 0.2, dx: 18, o: 0.6 },
+  { x: 89, y: 34, s: 3, t: 6.6, dl: 1.9, dx: -12, o: 0.45 },
+  { x: 94, y: 62, s: 4, t: 8.2, dl: 2.4, dx: 16, o: 0.5 },
+  { x: 49, y: 90, s: 3, t: 7.8, dl: 3.2, dx: -14, o: 0.4 },
+];
 
 /* ═══════════ ١) الواجهة الافتتاحية ═══════════ */
 
@@ -17,8 +35,11 @@ export function Opening() {
   const lastLesson = s.lessons.find((l) => l.state === "current") || s.lessons[s.done - 1];
   const queue = useMemo(() => seriesQueue(s), [s]);
 
-  let resumePos = 812;
-  try { resumePos = Number(localStorage.getItem(`sawti:pos:s1-${lastLesson.n}`)) || 812; } catch { /* noop */ }
+  let resumePos = 0;
+  try { resumePos = Number(localStorage.getItem(`sawti:pos:s1-${lastLesson.n}`)) || 0; } catch { /* noop */ }
+  const started = resumePos > 20;
+  const y = useScrollY();
+  const prm = usePrefersReducedMotion();
 
   const track = {
     id: `s1-${lastLesson.n}`,
@@ -31,14 +52,30 @@ export function Opening() {
 
   return (
     <section id="top" className="relative overflow-hidden pb-6 pt-32 md:pt-40">
-      {/* طبقات الخلفية: مشربية + توهج + نقش جانبي بمنظور خفيف */}
+      {/* طبقات الخلفية: مشربية + توهج + ذرّات ذهبية سابحة */}
       <Mashrabiya opacity={0.5} />
+      <div className="dust pointer-events-none absolute inset-0" aria-hidden="true">
+        {DUST.map((d, i) => (
+          <i
+            key={i}
+            style={{
+              right: `${d.x}%`, top: `${d.y}%`, width: d.s, height: d.s,
+              ["--t" as string]: `${d.t}s`, ["--dl" as string]: `${d.dl}s`,
+              ["--dx" as string]: `${d.dx}px`, ["--o" as string]: d.o,
+            }}
+          />
+        ))}
+      </div>
       <div className="pointer-events-none absolute -top-40 right-[-10%] h-[34rem] w-[34rem] rounded-full opacity-70 blur-3xl" style={{ background: "radial-gradient(circle, var(--glow), transparent 65%)" }} aria-hidden="true" />
       <div className="pointer-events-none absolute left-[-8%] top-24 h-[26rem] w-[26rem] rounded-full opacity-60 blur-3xl" style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--olive) 18%, transparent), transparent 70%)" }} aria-hidden="true" />
 
       <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:px-8">
-        {/* النقش المميّز: نجمة تكتمل أسافينها مع تقدم السلسلة */}
-        <div ref={starRef} className="relative mx-auto hidden md:block">
+        {/* النقش المميّز: نجمة تكتمل أسافينها مع تقدم السلسلة — تنزلق مع التمرير */}
+        <div
+          ref={starRef}
+          className="relative mx-auto hidden md:block"
+          style={prm ? undefined : { transform: `translateY(${Math.min(y, 800) * 0.075}px)` }}
+        >
           <div className="absolute inset-0 grid place-items-center">
             <div className="h-72 w-72 rounded-full border border-dashed border-line" style={{ animation: starOn ? "spinSlow 120s linear infinite" : undefined }} aria-hidden="true" />
           </div>
@@ -66,8 +103,18 @@ export function Opening() {
             </div>
 
             <h2 className="mt-5 font-display text-4xl font-bold leading-[1.25] text-ink md:text-6xl md:leading-[1.2]">
-              شرح بلوغ المرام
-              <span className="mt-1 block text-2xl font-normal text-gold md:text-3xl">كتاب الطهارة — ابن حجر العسقلاني</span>
+              {["شرح", "بلوغ", "المرام"].map((w, i) => (
+                <span key={w} className="inline-block" style={{ animation: `rise 0.85s var(--ease-soft) ${0.25 + i * 0.13}s both` }}>
+                  {w}&nbsp;
+                </span>
+              ))}
+              <span className="mt-1 block text-2xl font-normal text-gold md:text-3xl">
+                {["كتاب", "الطهارة", "—", "ابن", "حجر", "العسقلاني"].map((w, i) => (
+                  <span key={i} className="inline-block" style={{ animation: `rise 0.85s var(--ease-soft) ${0.66 + i * 0.09}s both` }}>
+                    {w}&nbsp;
+                  </span>
+                ))}
+              </span>
             </h2>
 
             <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-mute">{s.desc}</p>
@@ -92,7 +139,7 @@ export function Opening() {
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <button
                 onClick={() => play(track, queue)}
-                className="btn-press flex items-center gap-2.5 rounded-full bg-gold px-6 py-3.5 text-sm font-bold text-base shadow-lg shadow-gold/25"
+                className="btn-press sheen flex items-center gap-2.5 rounded-full bg-gold px-6 py-3.5 text-sm font-bold text-base shadow-lg shadow-gold/25"
               >
                 {I.play("ms-0.5")} تشغيل الدرس {toAr(lastLesson.n)} فورًا
               </button>
@@ -120,10 +167,21 @@ export function Opening() {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-ink">{track.title}</p>
                 <p className="mt-0.5 text-[11px] text-mute">
-                  توقفت عند <span className="num text-gold">{fmtClock(resumePos)}</span> · بقي <span className="num">{fmtClock(track.duration - resumePos)}</span>
+                  {started ? (
+                    <>
+                      توقفت عند <span className="num text-gold">{fmtClock(resumePos)}</span> · بقي <span className="num">{fmtClock(track.duration - resumePos)}</span>
+                    </>
+                  ) : (
+                    <>
+                      أول استماع — المدة <span className="num">{fmtClock(track.duration)}</span> · يُحفظ موضعك تلقائيًا
+                    </>
+                  )}
                 </p>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-line">
-                  <div className="h-full rounded-full bg-olive" style={{ width: `${(resumePos / track.duration) * 100}%` }} />
+                  <div
+                    className="h-full rounded-full bg-olive transition-[width] duration-700"
+                    style={{ width: `${started ? (resumePos / track.duration) * 100 : 0}%`, transitionTimingFunction: "var(--ease-soft)" }}
+                  />
                 </div>
               </div>
               <button
@@ -372,9 +430,9 @@ function RaddCard({ r, i }: { r: Radd; i: number }) {
       <article
         className={cx(
           "doc-paper group relative h-full rounded-sm p-6 transition-transform duration-500",
-          i % 3 === 0 && "md:translate-y-4 md:rotate-[0.6deg]",
-          i % 3 === 1 && "md:-translate-y-1 md:rotate-[-0.5deg]",
-          i % 3 === 2 && "md:translate-y-7 md:rotate-[0.4deg]"
+          i % 3 === 0 && "md:translate-y-4 md:rotate-[0.6deg] md:hover:translate-y-0 md:hover:rotate-0",
+          i % 3 === 1 && "md:-translate-y-1 md:rotate-[-0.5deg] md:hover:translate-y-0 md:hover:rotate-0",
+          i % 3 === 2 && "md:translate-y-7 md:rotate-[0.4deg] md:hover:translate-y-2 md:hover:rotate-0"
         )}
         style={{ transitionTimingFunction: "var(--ease-soft)" }}
       >
@@ -413,3 +471,46 @@ function RaddCard({ r, i }: { r: Radd; i: number }) {
 }
 
 export { Girih, KIND_LABEL, articles, diary };
+
+/* ═══════════ ٢) شريط أحدث المواد — يتحرك بلا نهاية ويتوقف عند المرور ═══════════ */
+
+const TICKER = [
+  ...seriesList[0].lessons
+    .filter((l) => l.state !== "next")
+    .slice(-3)
+    .map((l) => ({ id: `s1-${l.n}`, kind: "درس", title: `الدرس ${l.n}: ${l.title}`, sec: "series" })),
+  ...khutab.slice(0, 3).map((k) => ({ id: k.id, kind: "خطبة", title: k.title, sec: "khutab" })),
+  ...articles.slice(0, 3).map((a) => ({ id: a.id, kind: "مقال", title: a.title, sec: "articles" })),
+  ...fatawa.slice(0, 2).map((f) => ({ id: f.id, kind: "فتوى", title: f.question, sec: "fatwa" })),
+];
+
+export function LatestTicker() {
+  return (
+    <div className="ticker relative mt-16 overflow-hidden border-y border-line bg-card/60" aria-label="أحدث المواد">
+      {/* تلاشي الحواف */}
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-base to-transparent" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-base to-transparent" aria-hidden="true" />
+
+      <div className="ticker-track items-center py-3">
+        {[0, 1].map((copy) => (
+          <div key={copy} className="flex shrink-0 items-center" aria-hidden={copy === 1}>
+            {TICKER.map((t) => (
+              <button
+                key={`${copy}-${t.id}`}
+                tabIndex={copy === 1 ? -1 : 0}
+                onClick={() => document.getElementById(t.sec)?.scrollIntoView({ behavior: "smooth" })}
+                className="btn-press group mx-4 flex items-center gap-2.5 whitespace-nowrap text-[12.5px] text-mute transition-colors hover:text-ink md:mx-6"
+              >
+                <span className="text-gold opacity-60 transition-opacity group-hover:opacity-100" aria-hidden="true">✦</span>
+                <span className="rounded-full border border-line px-2 py-0.5 text-[10px] font-bold text-gold transition-colors group-hover:border-gold/50">
+                  {t.kind}
+                </span>
+                <span className="max-w-80 truncate">{t.title}</span>
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

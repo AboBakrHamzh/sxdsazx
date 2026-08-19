@@ -237,10 +237,4 @@ export function PlayerBar() {
   );
 }
 
-/* مساعدة لاختيار مقطع من قائمة التشغيل */
-import { usePlayer as up } from "../state/store";
-function usePlayerPlay(track: Track, queue: Track[]) {
-  // يستدعي play مباشرة من سياق المشغّل
-  const { play } = up();
-  play(track, queue);
-}
+
