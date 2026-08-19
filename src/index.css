@@ -420,3 +420,9 @@ input[type="range"].seek::-moz-range-thumb {
 @media (pointer: coarse) {
   .cursor-glow { display: none; }
 }
+
+/* نقطة مؤشر التمرير في الافتتاحية */
+@keyframes scrollDot {
+  0%, 100% { transform: translateY(-6px); opacity: 0.25; }
+  50% { transform: translateY(7px); opacity: 1; }
+}
