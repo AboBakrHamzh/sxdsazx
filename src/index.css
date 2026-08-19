@@ -426,3 +426,56 @@ input[type="range"].seek::-moz-range-thumb {
   0%, 100% { transform: translateY(-6px); opacity: 0.25; }
   50% { transform: translateY(7px); opacity: 1; }
 }
+
+/* ═══════════ سماء الافتتاحية: تدرّج + ضباب + ومض ═══════════ */
+
+/* تدرّج متنفّس: يزحف ببطء بين أركان اللوحة */
+.opening-grad {
+  background:
+    radial-gradient(120% 90% at 85% -10%, color-mix(in srgb, var(--gold) 15%, transparent), transparent 58%),
+    radial-gradient(90% 70% at 6% 24%, color-mix(in srgb, var(--olive) 26%, transparent), transparent 64%),
+    radial-gradient(70% 60% at 50% 118%, color-mix(in srgb, var(--golddeep) 16%, transparent), transparent 62%),
+    linear-gradient(163deg, var(--bg) 0%, color-mix(in srgb, var(--surface2) 88%, var(--gold) 12%) 40%, var(--bg) 74%, color-mix(in srgb, var(--olive-deep) 55%, var(--bg)) 100%);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 260% 260%;
+  animation: gradPan 26s ease-in-out infinite alternate;
+}
+@keyframes gradPan {
+  from { background-position: 0% 0%, 0% 0%, 0% 0%, 0% 0%; }
+  to { background-position: 0% 0%, 0% 0%, 0% 0%, 100% 100%; }
+}
+
+/* طبقات ضباب (رذاذ) منجرفة */
+.mist {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(64px);
+  pointer-events: none;
+  will-change: transform;
+}
+.mist-a {
+  width: 46rem;
+  height: 21rem;
+  top: 8%;
+  right: -10%;
+  background: radial-gradient(circle, var(--glow), transparent 66%);
+  animation: mistDrift 32s ease-in-out infinite alternate;
+}
+.mist-b {
+  width: 40rem;
+  height: 19rem;
+  bottom: 2%;
+  left: -12%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--olive) 22%, transparent), transparent 66%);
+  animation: mistDrift 40s ease-in-out infinite alternate-reverse;
+}
+@keyframes mistDrift {
+  from { transform: translate3d(-4%, -2%, 0) scale(1); }
+  to { transform: translate3d(7%, 4%, 0) scale(1.18); }
+}
+
+/* ومض النجوم الصغيرة حول الخاتم */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.12; transform: scale(0.6) rotate(0deg); }
+  50% { opacity: 0.95; transform: scale(1.2) rotate(24deg); }
+}
+.twinkle { animation: twinkle 3.4s ease-in-out infinite; }

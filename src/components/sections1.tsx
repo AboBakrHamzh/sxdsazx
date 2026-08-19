@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 import { KIND_LABEL, articles, diary, fatawa, khutab, seriesList, type Series } from "../data/content";
-import { cx, fmtClock, fmtDur, hijriToday, toAr, useInView, usePrefersReducedMotion, useScrollY } from "../lib/utils";
+import { cx, fmtClock, fmtDur, hijriToday, toAr, useInView, usePointerParallax, usePrefersReducedMotion, useScrollY } from "../lib/utils";
 import { featuredSeries, seriesQueue, usePlayer, useUI } from "../state/store";
 import { Sheet, I } from "./chrome";
+import { SkyCanvas } from "./sky";
 import { Corners, Flourish, Girih, Khatam, Mashrabiya, ProgressKhatam, SectionHead } from "./ornament";
 import { DlBtn, FavBtn } from "./player";
 
@@ -40,8 +41,14 @@ function Medallion({ s }: { s: Series }) {
     "left-[36%] top-[-8%]",
   ];
   return (
-    <div ref={ref} className="relative mx-auto w-64 sm:w-72 lg:mt-0 lg:w-full lg:max-w-[26rem]">
-      <div className="relative mx-auto aspect-square w-full">
+    <div ref={ref} className="group relative mx-auto w-64 transition-transform duration-700 hover:scale-[1.035] sm:w-72 lg:mt-0 lg:w-full lg:max-w-[26rem]" style={{ transitionTimingFunction: "var(--ease-soft)" }}>
+      {/* نجوم تومض حول المدار */}
+      <span className="twinkle absolute -top-3 right-8 text-sm text-gold" aria-hidden="true">✦</span>
+      <span className="twinkle absolute left-0 top-1/3 text-xs text-gold/80" style={{ animationDelay: "1.1s" }} aria-hidden="true">✦</span>
+      <span className="twinkle absolute -bottom-2 right-1/4 text-[10px] text-brass" style={{ animationDelay: "2.2s" }} aria-hidden="true">✦</span>
+      <span className="twinkle absolute -left-4 bottom-10 text-sm text-gold/70" style={{ animationDelay: "0.6s" }} aria-hidden="true">✦</span>
+
+      <div className="relative mx-auto aspect-square w-full drop-shadow-[0_0_28px_var(--glow)] transition-[filter] duration-700 group-hover:drop-shadow-[0_0_44px_var(--glow)]">
         {/* حلقات مدارية دوّارة */}
         <div className="absolute inset-0 rounded-full border border-dashed border-gold/40" style={{ animation: spin ? "spinSlow 70s linear infinite" : undefined }} aria-hidden="true" />
         <div className="absolute inset-5 rounded-full border border-line/80" style={{ animation: spin ? "spinSlow 100s linear infinite reverse" : undefined }} aria-hidden="true" />
@@ -117,7 +124,7 @@ function ScrollCue() {
 
 export function Opening() {
   const { ref: statRef, on: statOn } = useInView<HTMLDivElement>();
-  const { setActiveSeries } = useUI();
+  const { setActiveSeries, motion } = useUI();
   const { play } = usePlayer();
   const s = featuredSeries;
   const lastLesson = s.lessons.find((l) => l.state === "current") || s.lessons[s.done - 1];
@@ -127,6 +134,10 @@ export function Opening() {
   try { resumePos = Number(localStorage.getItem(`sawti:pos:s1-${lastLesson.n}`)) || 0; } catch { /* noop */ }
   const started = resumePos > 20;
   const y = useScrollY();
+  const prm = usePrefersReducedMotion();
+  const alive = motion === "full" && !prm;
+  /* طبقات تنزاح مع مؤشر الفأرة بعمق مختلف */
+  const secRef = usePointerParallax<HTMLElement>(alive);
 
   const track = {
     id: `s1-${lastLesson.n}`,
@@ -138,10 +149,21 @@ export function Opening() {
   };
 
   return (
-    <section id="top" className="relative overflow-hidden pt-28 md:pt-32">
-      {/* طبقات الخلفية: مشربية + ذرّات + توهّجات + خاتم مائي */}
-      <Mashrabiya opacity={0.4} />
-      <div className="dust pointer-events-none absolute inset-0" aria-hidden="true">
+    <section ref={secRef} id="top" className="relative overflow-hidden pt-28 md:pt-32">
+      {/* سماء الافتتاحية: تدرّج متنفّس ← مشربية ← ضباب منجرف ← ذرّات ← رذاذ الكانفس ← خاتم مائي */}
+      <div className="opening-grad absolute inset-0" aria-hidden="true" />
+      <Mashrabiya opacity={0.35} />
+      <div className="pointer-events-none absolute inset-0" style={alive ? { transform: "translate3d(calc(var(--px,0)*-14px), calc(var(--py,0)*-10px), 0)" } : undefined} aria-hidden="true">
+        <div className="mist mist-a" />
+      </div>
+      <div className="pointer-events-none absolute inset-0" style={alive ? { transform: "translate3d(calc(var(--px,0)*-22px), calc(var(--py,0)*-14px), 0)" } : undefined} aria-hidden="true">
+        <div className="mist mist-b" />
+      </div>
+      <div
+        className="dust pointer-events-none absolute inset-0"
+        style={alive ? { transform: "translate3d(calc(var(--px,0)*16px), calc(var(--py,0)*11px), 0)" } : undefined}
+        aria-hidden="true"
+      >
         {DUST.map((d, i) => (
           <i
             key={i}
@@ -153,8 +175,8 @@ export function Opening() {
           />
         ))}
       </div>
-      <div className="pointer-events-none absolute -top-40 right-[-12%] h-[40rem] w-[40rem] rounded-full opacity-70 blur-3xl" style={{ background: "radial-gradient(circle, var(--glow), transparent 62%)" }} aria-hidden="true" />
-      <div className="pointer-events-none absolute bottom-[-18%] left-[-10%] h-[32rem] w-[32rem] rounded-full opacity-50 blur-3xl" style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--olive) 22%, transparent), transparent 65%)" }} aria-hidden="true" />
+      {/* الرذاذ الحي: يتساقط ويتطاير وينفجر عند النقر وينزاح عن المؤشر */}
+      <SkyCanvas host={secRef} />
       <div className="pointer-events-none absolute -bottom-28 -left-28 opacity-[0.05]" style={{ transform: `translateY(${y * -0.06}px)` }} aria-hidden="true">
         <Khatam size={520} progress={1} tone="var(--gold)" />
       </div>
@@ -288,7 +310,9 @@ export function Opening() {
           </div>
         </div>
 
-            <Medallion s={s} />
+            <div style={alive ? { transform: "translate3d(calc(var(--px,0)*22px), calc(var(--py,0)*15px), 0)" } : undefined}>
+              <Medallion s={s} />
+            </div>
           </div>
         </div>
 

@@ -155,6 +155,42 @@ export function downloadTrack(name: string, freq = 392, secs = 2.2): void {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
+/* ── انزياح الطبقات مع المؤشر (بارالاكس_pointer) ─────── */
+
+/* يثبت متغيّري ‎--px / --py (بين -1 و 1) على العنصر،
+   والطبقات الداخلية تتحرك عبر calc(var(--px)*Npx) بلا إعادة تصيير */
+export function usePointerParallax<T extends HTMLElement>(enabled: boolean) {
+  const ref = useRef<T | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !enabled) return;
+    if (typeof window === "undefined" || !window.matchMedia?.("(pointer: fine)").matches) return;
+    let raf = 0;
+    const mv = (e: PointerEvent) => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const r = el.getBoundingClientRect();
+        const x = Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width - 0.5) * 2));
+        const y = Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height - 0.5) * 2));
+        el.style.setProperty("--px", x.toFixed(3));
+        el.style.setProperty("--py", y.toFixed(3));
+      });
+    };
+    const leave = () => {
+      el.style.setProperty("--px", "0");
+      el.style.setProperty("--py", "0");
+    };
+    el.addEventListener("pointermove", mv, { passive: true });
+    el.addEventListener("pointerleave", leave);
+    return () => {
+      cancelAnimationFrame(raf);
+      el.removeEventListener("pointermove", mv);
+      el.removeEventListener("pointerleave", leave);
+    };
+  }, [enabled]);
+  return ref;
+}
+
 export const cx = (...c: (string | false | null | undefined)[]): string => c.filter(Boolean).join(" ");
 
 /* ── هوكس الحيوية (الدفعة الثانية) ─────────────────── */
