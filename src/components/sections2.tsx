@@ -2,6 +2,7 @@ import { useState } from "react";
 import { articles, books, diary, fatawa, khutab, lectures } from "../data/content";
 import { cx, fmtDur, toAr, useInView } from "../lib/utils";
 import { I } from "./chrome";
+import { TiltCard, useSpotlight } from "./interactive";
 import { Corners, Khatam, Mashrabiya, SectionHead } from "./ornament";
 import { DlBtn, FavBtn, MiniBar } from "./player";
 
@@ -128,8 +129,19 @@ export function KhutabList() {
         />
         <div ref={ref} className="mt-8 space-y-4">
           {khutab.map((k, i) => (
-            <div key={k.id} className={cx("rv", on && "on")} style={{ ["--d" as string]: `${i * 100}ms` }}>
-              <article className="card-lift group relative overflow-hidden rounded-2xl border border-line bg-card p-5 md:p-6">
+            <KhutabCard key={k.id} k={k} i={i} on={on} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function KhutabCard({ k, i, on }: { k: (typeof khutab)[number]; i: number; on: boolean }) {
+  const spotRef = useSpotlight<HTMLElement>();
+  return (
+    <div className={cx("rv", on && "on")} style={{ ["--d" as string]: `${i * 100}ms` }}>
+      <article ref={spotRef} className="card-lift spotlight group relative overflow-hidden rounded-2xl border border-line bg-card p-5 md:p-6">
                 <div className="pointer-events-none absolute -left-10 top-1/2 -translate-y-1/2 opacity-[0.05] transition-opacity duration-500 group-hover:opacity-[0.1]" aria-hidden="true">
                   <Khatam size={200} progress={1} tone="var(--gold)" />
                 </div>
@@ -154,12 +166,8 @@ export function KhutabList() {
                     </div>
                   </div>
                 </div>
-              </article>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
+      </article>
+    </div>
   );
 }
 
@@ -175,7 +183,8 @@ export function ArticlesMag() {
 
         <div ref={ref} className="mt-8 grid gap-8 lg:grid-cols-[7fr_5fr]">
           {/* المقال الرئيس */}
-          <article className={cx("rv card-lift group relative overflow-hidden rounded-3xl border border-line bg-card p-7 md:p-9", on && "on")}>
+          <TiltCard max={4.5} className={cx("rv group", on && "on")}>
+          <article className="card-lift relative h-full overflow-hidden rounded-3xl border border-line bg-card p-7 md:p-9">
             <Mashrabiya opacity={0.3} className="opacity-40 transition-opacity duration-700 group-hover:opacity-70" />
             <Corners />
             <div className="relative">
@@ -198,6 +207,7 @@ export function ArticlesMag() {
               </div>
             </div>
           </article>
+          </TiltCard>
 
           {/* القائمة المرقّمة */}
           <ol className="flex flex-col">
@@ -251,8 +261,12 @@ export function LibraryShelf() {
             <div key={b.id} className={cx("rv w-44 shrink-0 snap-start md:w-48", on && "on")} style={{ ["--d" as string]: `${(i % 5) * 90}ms` }}>
               <div className="group">
                 {/* الغلاف */}
+                <TiltCard
+                  max={12}
+                  className="relative aspect-[3/4] w-full origin-bottom overflow-hidden rounded-md border border-black/20 shadow-lg shadow-black/30"
+                >
                 <div
-                  className="relative aspect-[3/4] w-full origin-bottom overflow-hidden rounded-md border border-black/20 shadow-lg shadow-black/30 transition-transform duration-500 group-hover:-translate-y-2.5 group-hover:rotate-[1.2deg]"
+                  className="relative h-full w-full overflow-hidden rounded-md"
                   style={{ background: cs.bg, transitionTimingFunction: "var(--ease-soft)" }}
                   role="img"
                   aria-label={`غلاف ${b.title}`}
@@ -270,6 +284,7 @@ export function LibraryShelf() {
                   {/* كعب الكتاب */}
                   <div className="absolute inset-y-0 right-0 w-1.5 bg-black/25" aria-hidden="true" />
                 </div>
+                </TiltCard>
 
                 {/* بيانات الكتاب */}
                 <div className="mt-3.5 rounded-xl border border-line bg-card p-3.5">

@@ -5,6 +5,7 @@ import { featuredSeries, seriesQueue, usePlayer, useUI } from "../state/store";
 import { Sheet, I } from "./chrome";
 import { SkyCanvas } from "./sky";
 import { Corners, Flourish, Girih, Khatam, Mashrabiya, ProgressKhatam, SectionHead } from "./ornament";
+import { Magnetic, TiltCard } from "./interactive";
 import { DlBtn, FavBtn } from "./player";
 
 /* مواضع الذرّات الذهبية السابحة في الافتتاحية */
@@ -252,21 +253,25 @@ export function Opening() {
             </div>
 
             <div className="mt-7 flex flex-wrap items-center gap-3">
-              <button
-                onClick={() => play(track, queue)}
-                className="btn-press sheen flex items-center gap-2.5 rounded-full bg-gold px-6 py-3.5 text-sm font-bold text-base shadow-lg shadow-gold/25"
-              >
-                {I.play("ms-0.5")} تشغيل الدرس {toAr(lastLesson.n)} فورًا
-              </button>
-              <button
-                onClick={() => setActiveSeries(s)}
-                className="btn-press flex items-center gap-2 rounded-full border border-line bg-card px-6 py-3.5 text-sm font-semibold text-ink hover:border-gold/60"
-              >
-                منهج السلسلة الكامل
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="-scale-x-100">
-                  <path d="m9 5 7 7-7 7" />
-                </svg>
-              </button>
+              <Magnetic strength={0.4} radius={110}>
+                <button
+                  onClick={() => play(track, queue)}
+                  className="btn-press sheen flex items-center gap-2.5 rounded-full bg-gold px-6 py-3.5 text-sm font-bold text-base shadow-lg shadow-gold/25"
+                >
+                  {I.play("ms-0.5")} تشغيل الدرس {toAr(lastLesson.n)} فورًا
+                </button>
+              </Magnetic>
+              <Magnetic strength={0.3} radius={95}>
+                <button
+                  onClick={() => setActiveSeries(s)}
+                  className="btn-press flex items-center gap-2 rounded-full border border-line bg-card px-6 py-3.5 text-sm font-semibold text-ink hover:border-gold/60"
+                >
+                  منهج السلسلة الكامل
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="-scale-x-100">
+                    <path d="m9 5 7 7-7 7" />
+                  </svg>
+                </button>
+              </Magnetic>
             </div>
           </div>
 
@@ -338,12 +343,12 @@ function Stat({ label, value, on, i }: { label: string; value: number; on: boole
   const v = useCountUp(value, on);
   return (
     <div className={cx("rv", on && "on")} style={{ ["--d" as string]: `${i * 90}ms` }}>
-      <div className="card-lift relative overflow-hidden rounded-2xl border border-line bg-card/70 px-5 py-5 text-center backdrop-blur">
+      <TiltCard max={10} className="relative overflow-hidden rounded-2xl border border-line bg-card/70 px-5 py-5 text-center shadow-[var(--shadow)] backdrop-blur transition-shadow hover:border-gold/40">
         <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-l from-transparent via-gold/70 to-transparent" aria-hidden="true" />
         <p className="num font-display text-4xl font-bold leading-none text-gold md:text-5xl">{toAr(v)}</p>
         <div className="mx-auto my-2.5 h-px w-8 bg-gold/40" aria-hidden="true" />
         <p className="text-xs text-mute">{label}</p>
-      </div>
+      </TiltCard>
     </div>
   );
 }
@@ -516,6 +521,12 @@ export function SeriesSheet() {
 export function RaddDocs() {
   return (
     <section id="radd" className="relative scroll-mt-24 overflow-hidden bg-[#0d1915] py-16 text-[#eae3d2]">
+      {/* خلفية متنفّسة تزحف ببطء */}
+      <div
+        className="living-bg pointer-events-none absolute inset-0"
+        style={{ backgroundImage: "linear-gradient(120deg, rgba(199,164,95,0.05), rgba(46,74,59,0.12), rgba(199,164,95,0.05), rgba(13,25,21,0))" }}
+        aria-hidden="true"
+      />
       <Mashrabiya opacity={0.25} />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-l from-transparent via-gold/50 to-transparent" aria-hidden="true" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-l from-transparent via-gold/50 to-transparent" aria-hidden="true" />

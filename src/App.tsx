@@ -4,6 +4,7 @@ import { P0Doc } from "./components/p0doc";
 import { PlayerBar } from "./components/player";
 import { LatestTicker, Opening, RaddDocs, SeriesRail, SeriesSheet } from "./components/sections1";
 import { ArticlesMag, DiaryGrid, FatwaAccordion, KhutabList, LecturesTimeline, LibraryShelf } from "./components/sections2";
+import { AmbientDust, DriftingOrnaments, SparkTrail } from "./components/interactive";
 import { AppProviders } from "./state/store";
 
 /* ═══════════════════════════════════════════════════════
@@ -15,10 +16,13 @@ import { AppProviders } from "./state/store";
 export default function App() {
   return (
     <AppProviders>
+      <AmbientDust />
+      <DriftingOrnaments />
+      <SparkTrail />
       <CursorGlow />
       <Header />
 
-      <main className="min-h-screen">
+      <main className="relative z-[1] min-h-screen">
         <Opening />
         <LatestTicker />
         <Girih />
