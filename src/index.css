@@ -420,3 +420,150 @@ input[type="range"].seek::-moz-range-thumb {
 @media (pointer: coarse) {
   .cursor-glow { display: none; }
 }
+
+/* نقطة مؤشر التمرير في الافتتاحية */
+@keyframes scrollDot {
+  0%, 100% { transform: translateY(-6px); opacity: 0.25; }
+  50% { transform: translateY(7px); opacity: 1; }
+}
+
+/* ═══════════ سماء الافتتاحية: تدرّج + ضباب + ومض ═══════════ */
+
+/* تدرّج متنفّس: يزحف ببطء بين أركان اللوحة */
+.opening-grad {
+  background:
+    radial-gradient(120% 90% at 85% -10%, color-mix(in srgb, var(--gold) 15%, transparent), transparent 58%),
+    radial-gradient(90% 70% at 6% 24%, color-mix(in srgb, var(--olive) 26%, transparent), transparent 64%),
+    radial-gradient(70% 60% at 50% 118%, color-mix(in srgb, var(--golddeep) 16%, transparent), transparent 62%),
+    linear-gradient(163deg, var(--bg) 0%, color-mix(in srgb, var(--surface2) 88%, var(--gold) 12%) 40%, var(--bg) 74%, color-mix(in srgb, var(--olive-deep) 55%, var(--bg)) 100%);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 260% 260%;
+  animation: gradPan 26s ease-in-out infinite alternate;
+}
+@keyframes gradPan {
+  from { background-position: 0% 0%, 0% 0%, 0% 0%, 0% 0%; }
+  to { background-position: 0% 0%, 0% 0%, 0% 0%, 100% 100%; }
+}
+
+/* طبقات ضباب (رذاذ) منجرفة */
+.mist {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(64px);
+  pointer-events: none;
+  will-change: transform;
+}
+.mist-a {
+  width: 46rem;
+  height: 21rem;
+  top: 8%;
+  right: -10%;
+  background: radial-gradient(circle, var(--glow), transparent 66%);
+  animation: mistDrift 32s ease-in-out infinite alternate;
+}
+.mist-b {
+  width: 40rem;
+  height: 19rem;
+  bottom: 2%;
+  left: -12%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--olive) 22%, transparent), transparent 66%);
+  animation: mistDrift 40s ease-in-out infinite alternate-reverse;
+}
+@keyframes mistDrift {
+  from { transform: translate3d(-4%, -2%, 0) scale(1); }
+  to { transform: translate3d(7%, 4%, 0) scale(1.18); }
+}
+
+/* ومض النجوم الصغيرة حول الخاتم */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.12; transform: scale(0.6) rotate(0deg); }
+  50% { opacity: 0.95; transform: scale(1.2) rotate(24deg); }
+}
+.twinkle { animation: twinkle 3.4s ease-in-out infinite; }
+
+/* ═══════════ تفاعل المؤشر والحركات الدائمة ═══════════ */
+
+/* بطاقة تميل — تحتفظ بعمقها أثناء الميل */
+.tilt-card {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* توهج يتبع المؤشر داخل البطاقة المائلة */
+.tilt-glow { position: relative; }
+.tilt-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s var(--ease-soft);
+  background: radial-gradient(
+    320px circle at var(--gx, 50%) var(--gy, 50%),
+    var(--glow),
+    transparent 60%
+  );
+  z-index: 1;
+}
+.tilt-glow:hover::before { opacity: 1; }
+
+/* غبار دائم يطفو من الأسفل إلى الأعلى خلف الصفحة */
+@keyframes moteRise {
+  0% { transform: translate3d(0, 110vh, 0); }
+  100% { transform: translate3d(var(--drift, 30px), -12vh, 0); }
+}
+.ambient-mote {
+  position: absolute;
+  top: 0;
+  border-radius: 9999px;
+  background: var(--gold);
+  filter: blur(0.6px);
+  box-shadow: 0 0 10px var(--glow);
+  animation: moteRise linear infinite;
+}
+
+/* هالة المؤشر فوق العناصر */
+.spotlight { position: relative; }
+.spotlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s var(--ease-soft);
+  background: radial-gradient(
+    260px circle at var(--sx, 50%) var(--sy, 50%),
+    var(--glow),
+    transparent 55%
+  );
+}
+.spotlight:hover::after { opacity: 1; }
+
+/* شريط ذهبي نابض يمر عبر الصفحة باستمرار */
+@keyframes pulseLine {
+  0%, 100% { opacity: 0.25; transform: scaleX(0.7); }
+  50% { opacity: 0.7; transform: scaleX(1); }
+}
+.pulse-line {
+  animation: pulseLine 4s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* خلفية قسم تتنفس بتدرج زاحف */
+@keyframes bgPan {
+  from { background-position: 0% 50%; }
+  to { background-position: 100% 50%; }
+}
+.living-bg {
+  background-size: 220% 220%;
+  animation: bgPan 18s ease-in-out infinite alternate;
+}
+
+/* نجم هندسي يدور وينجرف ببطء شديد خلف الصفحة */
+@keyframes driftSpin {
+  0% { transform: translate3d(0, -30px, 0) rotate(0deg); }
+  50% { transform: translate3d(24px, 30px, 0) rotate(180deg); }
+  100% { transform: translate3d(0, -30px, 0) rotate(360deg); }
+}
+.drift-star { animation: driftSpin linear infinite; }

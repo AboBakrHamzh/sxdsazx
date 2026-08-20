@@ -104,29 +104,24 @@ function PlayerProvider({ children }: { children: ReactNode }) {
     ref.current.progress = progress;
   });
 
-  /* شريط التقدم — يحاكي الاستماع ويتابع حتى نهاية المقطع */
+  /* شريط التقدم — يحاكي الاستماع ويتابع حتى نهاية المقطع
+     (كل الآثار الجانبية خارج دوال التحديث كي تبقى نقيّة) */
   useEffect(() => {
     if (!playing || !current) return;
     const id = window.setInterval(() => {
-      setProgress((p) => {
-        const np = p + 0.25 * ref.current.speed;
-        if (np >= current.duration) {
-          window.clearInterval(id);
-          const idx = qRef.current.findIndex((t) => t.id === current.id);
-          const nx = qRef.current[idx + 1];
-          if (nx) {
-            /* انتقال حيّ: لحظة سكون قصيرة ثم يبدأ المقطع التالي وحده */
-            stopPad();
-            setPlaying(false);
-            window.setTimeout(() => playRef.current(nx, qRef.current), 700);
-          } else {
-            setPlaying(false);
-            stopPad();
-          }
-          return current.duration;
-        }
-        return np;
-      });
+      const np = ref.current.progress + 0.25 * ref.current.speed;
+      if (np >= current.duration) {
+        window.clearInterval(id);
+        setProgress(current.duration);
+        setPlaying(false);
+        stopPad();
+        const idx = qRef.current.findIndex((t) => t.id === current.id);
+        const nx = qRef.current[idx + 1];
+        /* انتقال حيّ: لحظة سكون قصيرة ثم يبدأ المقطع التالي وحده */
+        if (nx) window.setTimeout(() => playRef.current(nx, qRef.current), 700);
+      } else {
+        setProgress(np);
+      }
     }, 250);
     return () => window.clearInterval(id);
   }, [playing, current]);
@@ -163,12 +158,10 @@ function PlayerProvider({ children }: { children: ReactNode }) {
 
   const toggle = useCallback(() => {
     if (!current) return;
-    setPlaying((p) => {
-      const np = !p;
-      if (np) startPad(volume, current.tone);
-      else stopPad();
-      return np;
-    });
+    const np = !ref.current.playing;
+    setPlaying(np);
+    if (np) startPad(volume, current.tone);
+    else stopPad();
   }, [current, volume]);
 
   const seek = useCallback((sec: number) => {

@@ -1,9 +1,11 @@
 import { useMemo } from "react";
-import { KIND_LABEL, articles, diary, fatawa, khutab, seriesList } from "../data/content";
-import { cx, fmtClock, fmtDur, hijriToday, toAr, useInView, usePrefersReducedMotion, useScrollY } from "../lib/utils";
+import { KIND_LABEL, articles, diary, fatawa, khutab, seriesList, type Series } from "../data/content";
+import { cx, fmtClock, fmtDur, hijriToday, toAr, useInView, usePointerParallax, usePrefersReducedMotion, useScrollY } from "../lib/utils";
 import { featuredSeries, seriesQueue, usePlayer, useUI } from "../state/store";
 import { Sheet, I } from "./chrome";
-import { Corners, Girih, Khatam, Mashrabiya, ProgressKhatam, SectionHead } from "./ornament";
+import { SkyCanvas } from "./sky";
+import { Corners, Flourish, Girih, Khatam, Mashrabiya, ProgressKhatam, SectionHead } from "./ornament";
+import { Magnetic, TiltCard } from "./interactive";
 import { DlBtn, FavBtn } from "./player";
 
 /* مواضع الذرّات الذهبية السابحة في الافتتاحية */
@@ -24,12 +26,106 @@ const DUST = [
   { x: 49, y: 90, s: 3, t: 7.8, dl: 3.2, dx: -14, o: 0.4 },
 ];
 
+/* ═══════════ عناصر الافتتاحية المساعدة ═══════════ */
+
+/* الخاتم الكبير — نجمة التقدم في قلب واجهة المخطوطة */
+function Medallion({ s }: { s: Series }) {
+  const { ref, on } = useInView<HTMLDivElement>("-60px");
+  const prm = usePrefersReducedMotion();
+  const spin = on && !prm;
+  const axes = s.axes.slice(0, 5);
+  const spots = [
+    "right-[-12%] top-[10%]",
+    "left-[-14%] top-[32%]",
+    "right-[-16%] bottom-[20%]",
+    "left-[-10%] bottom-[6%]",
+    "left-[36%] top-[-8%]",
+  ];
+  return (
+    <div ref={ref} className="group relative mx-auto w-64 transition-transform duration-700 hover:scale-[1.035] sm:w-72 lg:mt-0 lg:w-full lg:max-w-[26rem]" style={{ transitionTimingFunction: "var(--ease-soft)" }}>
+      {/* نجوم تومض حول المدار */}
+      <span className="twinkle absolute -top-3 right-8 text-sm text-gold" aria-hidden="true">✦</span>
+      <span className="twinkle absolute left-0 top-1/3 text-xs text-gold/80" style={{ animationDelay: "1.1s" }} aria-hidden="true">✦</span>
+      <span className="twinkle absolute -bottom-2 right-1/4 text-[10px] text-brass" style={{ animationDelay: "2.2s" }} aria-hidden="true">✦</span>
+      <span className="twinkle absolute -left-4 bottom-10 text-sm text-gold/70" style={{ animationDelay: "0.6s" }} aria-hidden="true">✦</span>
+
+      <div className="relative mx-auto aspect-square w-full drop-shadow-[0_0_28px_var(--glow)] transition-[filter] duration-700 group-hover:drop-shadow-[0_0_44px_var(--glow)]">
+        {/* حلقات مدارية دوّارة */}
+        <div className="absolute inset-0 rounded-full border border-dashed border-gold/40" style={{ animation: spin ? "spinSlow 70s linear infinite" : undefined }} aria-hidden="true" />
+        <div className="absolute inset-5 rounded-full border border-line/80" style={{ animation: spin ? "spinSlow 100s linear infinite reverse" : undefined }} aria-hidden="true" />
+        {/* نقاط على المدار */}
+        <span className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold shadow-[0_0_10px_var(--glow)]" aria-hidden="true" />
+        <span className="absolute bottom-0 left-1/2 h-2 w-2 -translate-x-1/2 translate-y-1/2 rounded-full bg-gold shadow-[0_0_10px_var(--glow)]" aria-hidden="true" />
+        <span className="absolute left-0 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold shadow-[0_0_10px_var(--glow)]" aria-hidden="true" />
+        <span className="absolute right-0 top-1/2 h-2 w-2 -translate-y-1/2 translate-x-1/2 rounded-full bg-gold shadow-[0_0_10px_var(--glow)]" aria-hidden="true" />
+
+        {/* الخاتم نفسه */}
+        <div className="absolute inset-9 grid place-items-center">
+          <Khatam size="100%" progress={s.done / s.total} draw on={on} tone="var(--gold)" />
+        </div>
+
+        {/* عدّاد الإنجاز في المركز */}
+        <div className="absolute inset-0 grid place-items-center">
+          <div className="text-center" style={on ? { animation: "rise 0.8s var(--ease-soft) 0.9s both" } : { opacity: 0 }}>
+            <p className="num font-display text-4xl font-bold leading-none text-ink">
+              {toAr(s.done)}<span className="text-base text-faint"> / {toAr(s.total)}</span>
+            </p>
+            <p className="mt-1.5 text-[10px] tracking-[0.25em] text-mute">درسًا مكتملًا</p>
+          </div>
+        </div>
+
+        {/* محاور السلسلة عائمة حول الخاتم */}
+        <div className="pointer-events-none absolute inset-0 hidden lg:block" aria-hidden="true">
+          {axes.map((a, i) => (
+            <span
+              key={a}
+              className={cx("absolute rounded-full border border-gold/30 bg-card/90 px-3 py-1 text-[10.5px] text-mute shadow-md backdrop-blur", spots[i % spots.length])}
+              style={{ ["--rot" as string]: `${i % 2 ? 1.6 : -1.6}deg`, animation: spin ? `floaty ${5 + i}s ease-in-out ${i * 0.5}s infinite` : undefined }}
+            >
+              {a}
+            </span>
+          ))}
+        </div>
+      </div>
+      <p className="mt-5 text-center text-[11px] text-faint">الخاتم: يكتمل ضلعًا فضلعًا كلما أتممت درسًا</p>
+    </div>
+  );
+}
+
+/* آية العلم — فاصل قرآني تحت الواجهة */
+function AyahDivider() {
+  const { ref, on } = useInView<HTMLDivElement>();
+  return (
+    <div ref={ref} className={cx("rv mt-14 text-center", on && "on")}>
+      <div className="flex items-center justify-center gap-4 md:gap-6">
+        <Flourish className="hidden opacity-70 sm:block" />
+        <p className="font-khat text-2xl leading-loose text-gold md:text-4xl">﴿ وَقُل رَّبِّ زِدْنِي عِلْمًا ﴾</p>
+        <Flourish className="hidden -scale-x-100 opacity-70 sm:block" />
+      </div>
+      <p className="num mt-3 text-[11px] tracking-[0.35em] text-faint">طه · ١١٤</p>
+    </div>
+  );
+}
+
+/* مؤشر التمرير */
+function ScrollCue() {
+  return (
+    <div className="mt-12 flex justify-center">
+      <a href="#series" className="group flex flex-col items-center gap-2 text-faint transition-colors hover:text-gold" aria-label="الانتقال إلى السلاسل">
+        <span className="text-[10px] tracking-[0.35em]">تابِع</span>
+        <span className="grid h-9 w-6 place-items-center rounded-full border border-current">
+          <span className="h-2 w-1 rounded-full bg-current" style={{ animation: "scrollDot 1.8s ease-in-out infinite" }} aria-hidden="true" />
+        </span>
+      </a>
+    </div>
+  );
+}
+
 /* ═══════════ ١) الواجهة الافتتاحية ═══════════ */
 
 export function Opening() {
-  const { ref: starRef, on: starOn } = useInView<HTMLDivElement>("-40px");
   const { ref: statRef, on: statOn } = useInView<HTMLDivElement>();
-  const { setActiveSeries } = useUI();
+  const { setActiveSeries, motion } = useUI();
   const { play } = usePlayer();
   const s = featuredSeries;
   const lastLesson = s.lessons.find((l) => l.state === "current") || s.lessons[s.done - 1];
@@ -40,6 +136,9 @@ export function Opening() {
   const started = resumePos > 20;
   const y = useScrollY();
   const prm = usePrefersReducedMotion();
+  const alive = motion === "full" && !prm;
+  /* طبقات تنزاح مع مؤشر الفأرة بعمق مختلف */
+  const secRef = usePointerParallax<HTMLElement>(alive);
 
   const track = {
     id: `s1-${lastLesson.n}`,
@@ -51,10 +150,21 @@ export function Opening() {
   };
 
   return (
-    <section id="top" className="relative overflow-hidden pb-6 pt-32 md:pt-40">
-      {/* طبقات الخلفية: مشربية + توهج + ذرّات ذهبية سابحة */}
-      <Mashrabiya opacity={0.5} />
-      <div className="dust pointer-events-none absolute inset-0" aria-hidden="true">
+    <section ref={secRef} id="top" className="relative overflow-hidden pt-28 md:pt-32">
+      {/* سماء الافتتاحية: تدرّج متنفّس ← مشربية ← ضباب منجرف ← ذرّات ← رذاذ الكانفس ← خاتم مائي */}
+      <div className="opening-grad absolute inset-0" aria-hidden="true" />
+      <Mashrabiya opacity={0.35} />
+      <div className="pointer-events-none absolute inset-0" style={alive ? { transform: "translate3d(calc(var(--px,0)*-14px), calc(var(--py,0)*-10px), 0)" } : undefined} aria-hidden="true">
+        <div className="mist mist-a" />
+      </div>
+      <div className="pointer-events-none absolute inset-0" style={alive ? { transform: "translate3d(calc(var(--px,0)*-22px), calc(var(--py,0)*-14px), 0)" } : undefined} aria-hidden="true">
+        <div className="mist mist-b" />
+      </div>
+      <div
+        className="dust pointer-events-none absolute inset-0"
+        style={alive ? { transform: "translate3d(calc(var(--px,0)*16px), calc(var(--py,0)*11px), 0)" } : undefined}
+        aria-hidden="true"
+      >
         {DUST.map((d, i) => (
           <i
             key={i}
@@ -66,30 +176,27 @@ export function Opening() {
           />
         ))}
       </div>
-      <div className="pointer-events-none absolute -top-40 right-[-10%] h-[34rem] w-[34rem] rounded-full opacity-70 blur-3xl" style={{ background: "radial-gradient(circle, var(--glow), transparent 65%)" }} aria-hidden="true" />
-      <div className="pointer-events-none absolute left-[-8%] top-24 h-[26rem] w-[26rem] rounded-full opacity-60 blur-3xl" style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--olive) 18%, transparent), transparent 70%)" }} aria-hidden="true" />
+      {/* الرذاذ الحي: يتساقط ويتطاير وينفجر عند النقر وينزاح عن المؤشر */}
+      <SkyCanvas host={secRef} />
+      <div className="pointer-events-none absolute -bottom-28 -left-28 opacity-[0.05]" style={{ transform: `translateY(${y * -0.06}px)` }} aria-hidden="true">
+        <Khatam size={520} progress={1} tone="var(--gold)" />
+      </div>
 
-      <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:px-8">
-        {/* النقش المميّز: نجمة تكتمل أسافينها مع تقدم السلسلة — تنزلق مع التمرير */}
-        <div
-          ref={starRef}
-          className="relative mx-auto hidden md:block"
-          style={prm ? undefined : { transform: `translateY(${Math.min(y, 800) * 0.075}px)` }}
-        >
-          <div className="absolute inset-0 grid place-items-center">
-            <div className="h-72 w-72 rounded-full border border-dashed border-line" style={{ animation: starOn ? "spinSlow 120s linear infinite" : undefined }} aria-hidden="true" />
-          </div>
-          <Khatam size={330} progress={s.done / s.total} draw on={starOn} spin tone="var(--gold)" />
-          <div className="absolute inset-0 grid place-items-center">
-            <div className="mt-2 text-center" style={starOn ? { animation: "rise 0.8s var(--ease-soft) 1.2s both" } : { opacity: 0 }}>
-              <p className="font-display text-4xl font-bold text-ink">{toAr(s.done)}<span className="text-lg text-faint"> / {toAr(s.total)}</span></p>
-              <p className="mt-1 text-xs tracking-widest text-mute">درسًا من كتاب الطهارة</p>
-            </div>
-          </div>
-          <p className="mt-4 text-center text-[11px] text-faint">الخاتم: يكتمل ضلعًا فضلعًا كلما أتممت درسًا</p>
-        </div>
+      <div className="relative mx-auto max-w-7xl px-4 md:px-8">
+        {/* البسملة */}
+        <p className="mb-7 text-center font-khat text-xl leading-relaxed text-gold/90 md:text-2xl" style={{ animation: "fadein 1.2s var(--ease-soft) 0.15s both" }}>
+          بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+        </p>
 
-        {/* السلسلة الجارية */}
+        {/* واجهة المخطوطة — إطار مذهّب مزدوج */}
+        <div className="relative overflow-hidden rounded-[2.2rem] border border-line bg-card/45 px-6 py-9 shadow-[var(--shadow)] backdrop-blur-sm md:rounded-[2.6rem] md:px-14 md:py-12">
+          <div className="pointer-events-none absolute inset-3 rounded-[1.7rem] border border-gold/20" aria-hidden="true" />
+          <Corners tone="var(--gold)" className="opacity-70" />
+          <Mashrabiya opacity={0.16} />
+          <div className="pointer-events-none absolute -top-24 left-1/2 h-64 w-[38rem] -translate-x-1/2 rounded-full opacity-60 blur-3xl" style={{ background: "radial-gradient(circle, var(--glow), transparent 60%)" }} aria-hidden="true" />
+
+          <div className="relative grid items-center gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-10">
+            {/* السلسلة الجارية */}
         <div>
           <div className="rv on" style={{ animation: "rise 0.8s var(--ease-soft) 0.1s both" }}>
             <div className="flex flex-wrap items-center gap-3">
@@ -119,11 +226,20 @@ export function Opening() {
 
             <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-mute">{s.desc}</p>
 
-            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-mute">
-              <span>المستوى: <b className="text-ink">{s.level}</b></span>
-              <span className="num">{toAr(s.total)} درسًا</span>
-              <span className="num">≈ {toAr(s.hours)} ساعة</span>
-              <span>{s.kind} تأصيلي</span>
+            <div className="mt-6 flex flex-wrap items-center gap-x-2.5 gap-y-2.5 text-[11.5px]">
+              {[
+                ["المستوى", s.level],
+                ["الدروس", toAr(s.total)],
+                ["المدة", `≈ ${toAr(s.hours)} ساعة`],
+                ["المنهج", `${s.kind} تأصيلي`],
+              ].map(([k, v], i) => (
+                <span key={k} className="flex items-center gap-2.5">
+                  {i > 0 && <span className="text-[8px] text-gold/60" aria-hidden="true">◆</span>}
+                  <span className="rounded-full border border-line bg-card/60 px-3 py-1.5 text-mute transition-colors hover:border-gold/40">
+                    {k}: <b className="text-ink">{v}</b>
+                  </span>
+                </span>
+              ))}
             </div>
 
             <div className="mt-5 max-w-xl">
@@ -137,21 +253,25 @@ export function Opening() {
             </div>
 
             <div className="mt-7 flex flex-wrap items-center gap-3">
-              <button
-                onClick={() => play(track, queue)}
-                className="btn-press sheen flex items-center gap-2.5 rounded-full bg-gold px-6 py-3.5 text-sm font-bold text-base shadow-lg shadow-gold/25"
-              >
-                {I.play("ms-0.5")} تشغيل الدرس {toAr(lastLesson.n)} فورًا
-              </button>
-              <button
-                onClick={() => setActiveSeries(s)}
-                className="btn-press flex items-center gap-2 rounded-full border border-line bg-card px-6 py-3.5 text-sm font-semibold text-ink hover:border-gold/60"
-              >
-                منهج السلسلة الكامل
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="-scale-x-100">
-                  <path d="m9 5 7 7-7 7" />
-                </svg>
-              </button>
+              <Magnetic strength={0.4} radius={110}>
+                <button
+                  onClick={() => play(track, queue)}
+                  className="btn-press sheen flex items-center gap-2.5 rounded-full bg-gold px-6 py-3.5 text-sm font-bold text-base shadow-lg shadow-gold/25"
+                >
+                  {I.play("ms-0.5")} تشغيل الدرس {toAr(lastLesson.n)} فورًا
+                </button>
+              </Magnetic>
+              <Magnetic strength={0.3} radius={95}>
+                <button
+                  onClick={() => setActiveSeries(s)}
+                  className="btn-press flex items-center gap-2 rounded-full border border-line bg-card px-6 py-3.5 text-sm font-semibold text-ink hover:border-gold/60"
+                >
+                  منهج السلسلة الكامل
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="-scale-x-100">
+                    <path d="m9 5 7 7-7 7" />
+                  </svg>
+                </button>
+              </Magnetic>
             </div>
           </div>
 
@@ -194,13 +314,23 @@ export function Opening() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* عدادات المنصة */}
-      <div ref={statRef} className="relative mx-auto mt-16 grid max-w-5xl grid-cols-2 gap-3 px-4 md:grid-cols-4 md:px-8">
-        {STATS.map((st, i) => (
-          <Stat key={st.label} {...st} on={statOn} i={i} />
-        ))}
+            <div style={alive ? { transform: "translate3d(calc(var(--px,0)*22px), calc(var(--py,0)*15px), 0)" } : undefined}>
+              <Medallion s={s} />
+            </div>
+          </div>
+        </div>
+
+        <AyahDivider />
+
+        {/* عدادات المنصة */}
+        <div ref={statRef} className="relative mx-auto mt-4 grid max-w-5xl grid-cols-2 gap-3 md:grid-cols-4">
+          {STATS.map((st, i) => (
+            <Stat key={st.label} {...st} on={statOn} i={i} />
+          ))}
+        </div>
+
+        <ScrollCue />
       </div>
     </section>
   );
@@ -213,10 +343,12 @@ function Stat({ label, value, on, i }: { label: string; value: number; on: boole
   const v = useCountUp(value, on);
   return (
     <div className={cx("rv", on && "on")} style={{ ["--d" as string]: `${i * 90}ms` }}>
-      <div className="card-lift rounded-2xl border border-line bg-card/70 px-5 py-4 text-center backdrop-blur">
-        <p className="num font-display text-3xl font-bold text-gold md:text-4xl">{toAr(v)}</p>
-        <p className="mt-1 text-xs text-mute">{label}</p>
-      </div>
+      <TiltCard max={10} className="relative overflow-hidden rounded-2xl border border-line bg-card/70 px-5 py-5 text-center shadow-[var(--shadow)] backdrop-blur transition-shadow hover:border-gold/40">
+        <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-l from-transparent via-gold/70 to-transparent" aria-hidden="true" />
+        <p className="num font-display text-4xl font-bold leading-none text-gold md:text-5xl">{toAr(v)}</p>
+        <div className="mx-auto my-2.5 h-px w-8 bg-gold/40" aria-hidden="true" />
+        <p className="text-xs text-mute">{label}</p>
+      </TiltCard>
     </div>
   );
 }
@@ -389,6 +521,12 @@ export function SeriesSheet() {
 export function RaddDocs() {
   return (
     <section id="radd" className="relative scroll-mt-24 overflow-hidden bg-[#0d1915] py-16 text-[#eae3d2]">
+      {/* خلفية متنفّسة تزحف ببطء */}
+      <div
+        className="living-bg pointer-events-none absolute inset-0"
+        style={{ backgroundImage: "linear-gradient(120deg, rgba(199,164,95,0.05), rgba(46,74,59,0.12), rgba(199,164,95,0.05), rgba(13,25,21,0))" }}
+        aria-hidden="true"
+      />
       <Mashrabiya opacity={0.25} />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-l from-transparent via-gold/50 to-transparent" aria-hidden="true" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-l from-transparent via-gold/50 to-transparent" aria-hidden="true" />

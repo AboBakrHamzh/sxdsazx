@@ -25,7 +25,7 @@ export function Khatam({
   spin = false,
   tone = "var(--gold)",
 }: {
-  size?: number;
+  size?: number | string;
   progress?: number; // 0..1 — أسافين مكتملة
   draw?: boolean;
   on?: boolean;
